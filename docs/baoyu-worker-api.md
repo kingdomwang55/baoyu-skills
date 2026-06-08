@@ -4,35 +4,67 @@
 
 ## Run With Docker
 
+Create an environment file from the grouped example:
+
 ```bash
-docker compose -f apps/baoyu-worker/docker-compose.example.yml up --build
+cp apps/baoyu-worker/.env.example .env
 ```
 
-The service listens on port `8787`.
-
-The image installs both root dependencies and dependencies declared by each `skills/*/scripts/package.json`, so CLI-backed skills can run inside the container without a separate setup step.
-
-If Docker reports `failed to connect to the docker API` or cannot find `docker.sock`, start Docker Desktop or the Docker daemon on the host before running the compose command.
-
-Required production setting:
+Edit `.env` before starting the service. At minimum set a production token:
 
 ```bash
 BAOYU_WORKER_TOKEN=replace-with-a-long-random-token
 ```
 
-Useful optional settings:
+Then start the worker:
 
 ```bash
-BAOYU_WORKER_DATA_DIR=/data
-BAOYU_CHROME_PROFILE_DIR=/data/chrome-profile
-OPENAI_API_KEY=...
-GOOGLE_API_KEY=...
-OPENROUTER_API_KEY=...
-DASHSCOPE_API_KEY=...
-REPLICATE_API_TOKEN=...
+docker compose -f apps/baoyu-worker/docker-compose.example.yml up --build
 ```
 
+The service listens on port `8787` by default. The image installs both root dependencies and dependencies declared by each `skills/*/scripts/package.json`, so CLI-backed skills can run inside the container without a separate setup step.
+
+If Docker reports `failed to connect to the docker API` or cannot find `docker.sock`, start Docker Desktop or the Docker daemon on the host before running the compose command.
+
 For Chrome/CDP skills, keep `/data/chrome-profile` mounted so browser login state survives container restarts.
+
+## Environment Pass-Through
+
+`docker-compose.example.yml` intentionally passes through every environment variable currently read by the wrapped worker or skill scripts. The worker runner also forwards the container environment to child skill processes. This prevents provider keys, gateway base URLs, Coding Plan endpoints, browser profile paths, cookies, and proxy settings from being silently dropped by Docker Compose.
+
+The `.env` example is grouped by purpose:
+
+- Worker runtime: `BAOYU_WORKER_TOKEN`, `BAOYU_WORKER_DATA_DIR`, `BAOYU_CHROME_PROFILE_DIR`, `PORT`, `HOST`.
+- OpenAI-compatible endpoints and gateways: `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `OPENAI_IMAGE_MODEL`, `OPENAI_IMAGE_API_DIALECT`, `OPENAI_IMAGE_USE_CHAT`.
+- Google/Gemini API provider: `GOOGLE_API_KEY`, `GEMINI_API_KEY`, `GOOGLE_BASE_URL`, `GOOGLE_IMAGE_MODEL`.
+- OpenRouter gateways: `OPENROUTER_API_KEY`, `OPENROUTER_BASE_URL`, `OPENROUTER_HTTP_REFERER`, `OPENROUTER_TITLE`, `OPENROUTER_IMAGE_MODEL`.
+- Chinese and gateway providers: DashScope, Volcengine Ark/Seedream/Jimeng, Z.AI/BigModel, MiniMax.
+- Azure and Replicate provider settings.
+- Browser-auth and platform skills: Gemini Web, X/Twitter, WeChat, Weibo, YouTube, Telegram callbacks.
+- Network proxies: `HTTP_PROXY`, `HTTPS_PROXY`, `ALL_PROXY`.
+
+OpenAI-compatible gateways and Coding Plan providers usually need both an API key and a base URL. For Volcengine Ark Coding Plan using the OpenAI-compatible protocol:
+
+```bash
+OPENAI_API_KEY=your-volcengine-api-key
+OPENAI_BASE_URL=https://ark.cn-beijing.volces.com/api/coding/v3
+```
+
+Important: pass-through only makes variables available inside the container. A variable has an effect only when the selected skill actually reads it. For example, current code reads `OPENAI_BASE_URL` in the `baoyu-image-gen` OpenAI-compatible image provider, but it does not read a generic `OPENAI_MODEL` variable.
+
+### Skill-Specific Environment Notes
+
+| Skill area | Variables read by current code |
+|------------|--------------------------------|
+| Worker server | `BAOYU_WORKER_TOKEN`, `BAOYU_WORKER_DATA_DIR`, `BAOYU_CHROME_PROFILE_DIR`, `PORT`, `HOST` |
+| `baoyu-image-gen` | `OPENAI_*`, `GOOGLE_*`, `GEMINI_API_KEY`, `OPENROUTER_*`, `DASHSCOPE_*`, `ARK_API_KEY`, `SEEDREAM_*`, `ZAI_*`, `BIGMODEL_*`, `MINIMAX_*`, `JIMENG_*`, `AZURE_OPENAI_*`, `REPLICATE_*`, `BAOYU_CODEX_IMAGEGEN_*`, `BAOYU_IMAGE_GEN_MAX_WORKERS`, proxy variables |
+| `baoyu-danger-gemini-web` | `GEMINI_WEB_*`, `BAOYU_CHROME_PROFILE_DIR` |
+| `baoyu-danger-x-to-markdown` | `X_AUTH_TOKEN`, `X_CT0`, `X_GUEST_TOKEN`, `X_TWID`, `X_BEARER_TOKEN`, `X_USER_AGENT`, `X_CLIENT_TRANSACTION_ID`, `X_DATA_DIR`, `X_COOKIE_PATH`, `X_CHROME_PROFILE_DIR`, `BAOYU_CHROME_PROFILE_DIR` |
+| URL/browser fetch skills | `BAOYU_CHROME_PROFILE_DIR` |
+| WeChat/Weibo/X browser posting | `WECHAT_BROWSER_*`, `WEIBO_BROWSER_*`, `X_BROWSER_*`, `BAOYU_CHROME_PROFILE_DIR` |
+| WeChat article helper | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `XDG_CONFIG_HOME` |
+| YouTube transcript | `YOUTUBE_TRANSCRIPT_COOKIES_FROM_BROWSER` |
+| Instruction-driven skills | The worker packages instructions and input; upstream agent workflows decide which backend variables to use |
 
 ## Authentication
 
