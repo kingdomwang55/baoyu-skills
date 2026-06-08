@@ -1,0 +1,9 @@
+.git
+.agents
+.claude
+node_modules
+worker-data
+logs
+*.log
+coverage
+.DS_Store

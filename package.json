@@ -8,7 +8,11 @@
   "scripts": {
     "test": "node ./scripts/run-node-tests.mjs",
     "test:coverage": "node ./scripts/run-node-tests.mjs --experimental-test-coverage",
-    "verify:skill-release-commits": "node ./scripts/verify-skill-release-commits.mjs"
+    "verify:skill-release-commits": "node ./scripts/verify-skill-release-commits.mjs",
+    "worker": "bun apps/baoyu-worker/src/server.ts",
+    "test:worker": "node --import tsx --test apps/baoyu-worker/src/*.test.ts",
+    "install:skill-script-deps": "node scripts/install-skill-script-deps.mjs",
+    "smoke:worker": "node --import tsx scripts/smoke-baoyu-worker.mjs"
   },
   "devDependencies": {
     "@mozilla/readability": "^0.6.0",
