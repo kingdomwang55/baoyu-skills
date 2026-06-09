@@ -2,6 +2,8 @@
 
 `baoyu-worker` wraps the `baoyu-skills` repository as an HTTP service for tools such as n8n. The worker exposes every marketplace skill through a fixed skill registry. CLI-backed skills run through Bun with array-form arguments. Instruction-driven skills return a packaged skill contract that an upstream agent workflow can execute with the configured text or image backend.
 
+For host deployment steps, see [baoyu-worker 宿主机部署指南](baoyu-worker-deployment.md).
+
 ## Run With Docker
 
 Create an environment file from the grouped example:
