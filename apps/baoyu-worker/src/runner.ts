@@ -18,6 +18,33 @@ async function writeText(filePath: string, content: string): Promise<void> {
   await fs.writeFile(filePath, content);
 }
 
+async function writeBytes(filePath: string, content: Buffer): Promise<void> {
+  await fs.mkdir(path.dirname(filePath), { recursive: true });
+  await fs.writeFile(filePath, content);
+}
+
+function resolveInsideJob(jobDir: string, relativePath: string): string {
+  const resolved = path.resolve(jobDir, relativePath);
+  const root = path.resolve(jobDir);
+  if (resolved !== root && !resolved.startsWith(`${root}${path.sep}`)) {
+    throw new Error(`input.files.${relativePath} escapes the job directory`);
+  }
+  return resolved;
+}
+
+function decodeFileContent(relativePath: string, content: unknown): string | Buffer {
+  if (typeof content === "string") {
+    return content;
+  }
+  if (content && typeof content === "object" && !Array.isArray(content)) {
+    const record = content as Record<string, unknown>;
+    if (record.encoding === "base64" && typeof record.data === "string") {
+      return Buffer.from(record.data, "base64");
+    }
+  }
+  throw new Error(`input.files.${relativePath} must be a string or a base64 file object`);
+}
+
 async function listFiles(dir: string, base = dir): Promise<string[]> {
   const entries = await fs.readdir(dir, { withFileTypes: true }).catch(() => []);
   const files: string[] = [];
@@ -46,21 +73,22 @@ async function materializeInput(job: JobRecord, request: JobRequest): Promise<vo
   if (typeof input.markdown === "string") {
     await writeText(path.join(job.dir, "input.md"), input.markdown);
   }
+  if (typeof input.html === "string") {
+    await writeText(path.join(job.dir, "input.html"), input.html);
+  }
   if (typeof input.text === "string") {
     await writeText(path.join(job.dir, "input.txt"), input.text);
   }
   const files = input.files;
   if (files && typeof files === "object" && !Array.isArray(files)) {
-    for (const [relativePath, content] of Object.entries(files)) {
-      if (typeof content !== "string") {
-        throw new Error(`input.files.${relativePath} must be a string`);
+    for (const [relativePath, rawContent] of Object.entries(files)) {
+      const resolved = resolveInsideJob(job.dir, relativePath);
+      const content = decodeFileContent(relativePath, rawContent);
+      if (typeof content === "string") {
+        await writeText(resolved, content);
+      } else {
+        await writeBytes(resolved, content);
       }
-      const resolved = path.resolve(job.dir, relativePath);
-      const root = path.resolve(job.dir);
-      if (resolved !== root && !resolved.startsWith(`${root}${path.sep}`)) {
-        throw new Error(`input.files.${relativePath} escapes the job directory`);
-      }
-      await writeText(resolved, content);
     }
   }
 }
@@ -146,7 +174,6 @@ async function postWebhook(url: string | undefined, job: JobRecord): Promise<voi
 export function createRunner(options: RunnerOptions) {
   return {
     async run(job: JobRecord, request: JobRequest): Promise<void> {
-      await materializeInput(job, request);
       const operation = request.operation ?? undefined;
       await options.store.update(job.id, {
         status: "running",
@@ -154,6 +181,7 @@ export function createRunner(options: RunnerOptions) {
         startedAt: new Date().toISOString(),
       });
       try {
+        await materializeInput(job, request);
         const invocation = buildInvocation({
           skill: request.skill,
           operation,

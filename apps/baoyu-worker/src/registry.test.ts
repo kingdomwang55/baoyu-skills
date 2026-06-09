@@ -70,6 +70,120 @@ describe("baoyu-worker registry", () => {
     assert.equal(invocation.inputPath, "/data/jobs/job_456/input.json");
   });
 
+  it("builds structured WeChat API args for markdown input", () => {
+    const invocation = buildInvocation({
+      skill: "baoyu-post-to-wechat",
+      operation: "api",
+      input: {
+        markdown: "# Title\n\nBody",
+        theme: "grace",
+        color: "blue",
+        title: "文章标题",
+        author: "宝玉",
+        summary: "摘要",
+        sourceUrl: "https://example.com/original",
+        cover: "imgs/cover.png",
+        account: "main",
+        noCite: true,
+        dryRun: true,
+        remote: true,
+        remoteHost: "server.example.com",
+        remoteUser: "deploy",
+        remotePort: "2222",
+        remoteIdentityFile: "/home/deploy/.ssh/id_ed25519",
+        remoteKnownHostsFile: "/home/deploy/.ssh/known_hosts",
+        remoteStrictHostKeyChecking: "accept-new",
+        remoteConnectTimeout: "15",
+        remoteProxyJump: "jump.example.com",
+      },
+      workDir: "/data/jobs/job_wechat",
+    });
+
+    assert.equal(invocation.kind, "cli");
+    assert.deepEqual(invocation.args, [
+      "skills/baoyu-post-to-wechat/scripts/wechat-api.ts",
+      "/data/jobs/job_wechat/input.md",
+      "--theme",
+      "grace",
+      "--color",
+      "blue",
+      "--title",
+      "文章标题",
+      "--author",
+      "宝玉",
+      "--summary",
+      "摘要",
+      "--source-url",
+      "https://example.com/original",
+      "--cover",
+      "/data/jobs/job_wechat/imgs/cover.png",
+      "--account",
+      "main",
+      "--no-cite",
+      "--dry-run",
+      "--remote",
+      "--remote-host",
+      "server.example.com",
+      "--remote-user",
+      "deploy",
+      "--remote-port",
+      "2222",
+      "--remote-identity-file",
+      "/home/deploy/.ssh/id_ed25519",
+      "--remote-known-hosts-file",
+      "/home/deploy/.ssh/known_hosts",
+      "--remote-strict-host-key-checking",
+      "accept-new",
+      "--remote-connect-timeout",
+      "15",
+      "--remote-proxy-jump",
+      "jump.example.com",
+    ]);
+  });
+
+  it("builds structured WeChat API args for html input", () => {
+    const invocation = buildInvocation({
+      skill: "baoyu-post-to-wechat",
+      operation: "api",
+      input: {
+        html: "<html><head><title>Title</title></head><body>Body</body></html>",
+        title: "HTML 标题",
+        cover: "/shared/cover.png",
+      },
+      workDir: "/data/jobs/job_html",
+    });
+
+    assert.equal(invocation.kind, "cli");
+    assert.deepEqual(invocation.args, [
+      "skills/baoyu-post-to-wechat/scripts/wechat-api.ts",
+      "/data/jobs/job_html/input.html",
+      "--title",
+      "HTML 标题",
+      "--cover",
+      "/shared/cover.png",
+    ]);
+  });
+
+  it("keeps rawArgs as the WeChat API escape hatch", () => {
+    const invocation = buildInvocation({
+      skill: "baoyu-post-to-wechat",
+      operation: "api",
+      input: {
+        markdown: "# Ignored",
+        rawArgs: ["/data/articles/manual.md", "--theme", "modern"],
+      },
+      workDir: "/data/jobs/job_raw",
+    });
+
+    assert.equal(invocation.kind, "cli");
+    assert.deepEqual(invocation.args, [
+      "skills/baoyu-post-to-wechat/scripts/wechat-api.ts",
+      "/data/articles/manual.md",
+      "--theme",
+      "modern",
+    ]);
+  });
+
   it("rejects unknown skills", () => {
     assert.throws(
       () => buildInvocation({

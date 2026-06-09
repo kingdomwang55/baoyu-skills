@@ -23,6 +23,13 @@ function stringValue(input: Input, key: string): string | undefined {
   return typeof value === "string" && value.length > 0 ? value : undefined;
 }
 
+function stringishValue(input: Input, key: string): string | undefined {
+  const value = input[key];
+  if (typeof value === "string" && value.length > 0) return value;
+  if (typeof value === "number" && Number.isFinite(value)) return String(value);
+  return undefined;
+}
+
 function booleanValue(input: Input, key: string): boolean {
   return input[key] === true;
 }
@@ -112,6 +119,48 @@ function translateArgs(input: Input, workDir: string): string[] {
   return args;
 }
 
+function jobRelativePath(workDir: string, value: string): string {
+  return path.isAbsolute(value) ? value : path.join(workDir, value);
+}
+
+function wechatApiArgs(input: Input, workDir: string): string[] {
+  const custom = rawArgs(input);
+  if (custom) return custom;
+
+  const args: string[] = [];
+  if (typeof input.markdown === "string") {
+    args.push(path.join(workDir, "input.md"));
+  } else if (typeof input.html === "string") {
+    args.push(path.join(workDir, "input.html"));
+  } else if (stringValue(input, "file")) {
+    args.push(stringValue(input, "file")!);
+  } else {
+    throw new Error("baoyu-post-to-wechat api requires input.markdown, input.html, input.file, or input.rawArgs");
+  }
+
+  pushFlag(args, "--theme", stringValue(input, "theme"));
+  pushFlag(args, "--color", stringValue(input, "color"));
+  pushFlag(args, "--title", stringValue(input, "title"));
+  pushFlag(args, "--author", stringValue(input, "author"));
+  pushFlag(args, "--summary", stringValue(input, "summary"));
+  pushFlag(args, "--source-url", stringValue(input, "sourceUrl") ?? stringValue(input, "source-url"));
+  const cover = stringValue(input, "cover");
+  if (cover) pushFlag(args, "--cover", jobRelativePath(workDir, cover));
+  pushFlag(args, "--account", stringValue(input, "account"));
+  if (booleanValue(input, "noCite") || booleanValue(input, "no-cite")) args.push("--no-cite");
+  if (booleanValue(input, "dryRun") || booleanValue(input, "dry-run")) args.push("--dry-run");
+  if (booleanValue(input, "remote")) args.push("--remote");
+  pushFlag(args, "--remote-host", stringValue(input, "remoteHost") ?? stringValue(input, "remote-host"));
+  pushFlag(args, "--remote-user", stringValue(input, "remoteUser") ?? stringValue(input, "remote-user"));
+  pushFlag(args, "--remote-port", stringishValue(input, "remotePort") ?? stringishValue(input, "remote-port"));
+  pushFlag(args, "--remote-identity-file", stringValue(input, "remoteIdentityFile") ?? stringValue(input, "remote-identity-file"));
+  pushFlag(args, "--remote-known-hosts-file", stringValue(input, "remoteKnownHostsFile") ?? stringValue(input, "remote-known-hosts-file"));
+  pushFlag(args, "--remote-strict-host-key-checking", stringValue(input, "remoteStrictHostKeyChecking") ?? stringValue(input, "remote-strict-host-key-checking"));
+  pushFlag(args, "--remote-connect-timeout", stringishValue(input, "remoteConnectTimeout") ?? stringishValue(input, "remote-connect-timeout"));
+  pushFlag(args, "--remote-proxy-jump", stringValue(input, "remoteProxyJump") ?? stringValue(input, "remote-proxy-jump"));
+  return args;
+}
+
 const registry: SkillDefinition[] = [
   instruction("baoyu-article-illustrator"),
   hybrid("baoyu-comic", "instruction", {
@@ -153,7 +202,7 @@ const registry: SkillDefinition[] = [
   }),
   cli("baoyu-post-to-wechat", "article", {
     article: { entry: "skills/baoyu-post-to-wechat/scripts/wechat-article.ts", description: "Publish a WeChat article via browser automation.", buildArgs: (input) => withRawArgs(input, []) },
-    api: { entry: "skills/baoyu-post-to-wechat/scripts/wechat-api.ts", description: "Publish through WeChat API.", buildArgs: (input) => withRawArgs(input, []) },
+    api: { entry: "skills/baoyu-post-to-wechat/scripts/wechat-api.ts", description: "Publish through WeChat API.", buildArgs: (input, workDir) => wechatApiArgs(input, workDir) },
     browser: { entry: "skills/baoyu-post-to-wechat/scripts/wechat-browser.ts", description: "Open WeChat browser workflow.", buildArgs: (input) => withRawArgs(input, []) },
     "md-to-wechat": { entry: "skills/baoyu-post-to-wechat/scripts/md-to-wechat.ts", description: "Convert Markdown to WeChat HTML.", buildArgs: (input, workDir) => withRawArgs(input, markdownPathArgs(input, workDir)) },
   }),

@@ -57,6 +57,65 @@ describe("baoyu-worker http api", () => {
     }
   });
 
+  it("accepts WeChat API markdown jobs with inline base64 files", async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), "baoyu-worker-"));
+    try {
+      const app = createWorkerApp({ dataDir: root, token: "secret", autoRun: false });
+      const response = await request(app, {
+        method: "POST",
+        path: "/v1/jobs",
+        token: "secret",
+        body: {
+          skill: "baoyu-post-to-wechat",
+          operation: "api",
+          input: {
+            markdown: "---\ntitle: 文章标题\ncover: imgs/cover.png\n---\n\n# 文章标题\n\n正文",
+            files: {
+              "imgs/cover.png": {
+                encoding: "base64",
+                contentType: "image/png",
+                data: Buffer.from([0x89, 0x50, 0x4e, 0x47]).toString("base64"),
+              },
+            },
+            theme: "grace",
+            dryRun: true,
+          },
+        },
+      });
+
+      assert.equal(response.status, 202);
+      assert.equal(response.body.skill, "baoyu-post-to-wechat");
+      assert.equal(response.body.operation, "api");
+      assert.equal(response.body.status, "queued");
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("rejects WeChat API jobs without a file, markdown, html, or rawArgs", async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), "baoyu-worker-"));
+    try {
+      const app = createWorkerApp({ dataDir: root, token: "secret", autoRun: false });
+      const response = await request(app, {
+        method: "POST",
+        path: "/v1/jobs",
+        token: "secret",
+        body: {
+          skill: "baoyu-post-to-wechat",
+          operation: "api",
+          input: {
+            title: "Missing body",
+          },
+        },
+      });
+
+      assert.equal(response.status, 400);
+      assert.match(response.body.error, /input.markdown, input.html, input.file, or input.rawArgs/);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
   it("rejects unknown skills before creating a job", async () => {
     const root = await mkdtemp(path.join(os.tmpdir(), "baoyu-worker-"));
     try {

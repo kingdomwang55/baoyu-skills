@@ -230,6 +230,26 @@ For multiple text files:
 }
 ```
 
+Binary files can be sent as base64 file objects. The worker writes the decoded bytes under the job directory before running the selected skill:
+
+```json
+{
+  "skill": "baoyu-post-to-wechat",
+  "operation": "api",
+  "input": {
+    "files": {
+      "imgs/cover.png": {
+        "encoding": "base64",
+        "contentType": "image/png",
+        "data": "iVBORw0KGgo..."
+      }
+    }
+  }
+}
+```
+
+All `input.files` paths are relative to the job directory. Paths that escape the job directory, such as `../secret.txt`, are rejected. The `contentType` field is accepted as descriptive metadata; the worker writes bytes according to `encoding` and `data`.
+
 For paths that must include the generated job ID, prefer the convenience fields where available. For fully custom `rawArgs`, first create a job with inline files when possible, or mount shared host paths into the container.
 
 ## Calling From n8n
@@ -334,6 +354,96 @@ stderr.log
   }
 }
 ```
+
+### WeChat Article API
+
+`baoyu-post-to-wechat` supports first-class HTTP publishing through the `api` operation. Markdown text is written to `input.md`, HTML text is written to `input.html`, and relative image/cover paths resolve inside the job directory.
+
+Markdown article:
+
+```json
+{
+  "skill": "baoyu-post-to-wechat",
+  "operation": "api",
+  "input": {
+    "markdown": "---\ntitle: 文章标题\nauthor: 宝玉\nsummary: 摘要\ncover: imgs/cover.png\n---\n\n# 文章标题\n\n正文\n\n![配图](imgs/a.png)",
+    "files": {
+      "imgs/cover.png": {
+        "encoding": "base64",
+        "contentType": "image/png",
+        "data": "iVBORw0KGgo..."
+      },
+      "imgs/a.png": {
+        "encoding": "base64",
+        "contentType": "image/png",
+        "data": "iVBORw0KGgo..."
+      }
+    },
+    "theme": "grace",
+    "color": "blue",
+    "author": "宝玉",
+    "summary": "摘要",
+    "sourceUrl": "https://example.com/original"
+  }
+}
+```
+
+HTML article:
+
+```json
+{
+  "skill": "baoyu-post-to-wechat",
+  "operation": "api",
+  "input": {
+    "html": "<!doctype html><html><head><title>文章标题</title></head><body><section style=\"font-size:16px;line-height:1.8;\">正文<img src=\"imgs/a.png\"></section></body></html>",
+    "files": {
+      "imgs/cover.png": {
+        "encoding": "base64",
+        "contentType": "image/png",
+        "data": "iVBORw0KGgo..."
+      },
+      "imgs/a.png": {
+        "encoding": "base64",
+        "contentType": "image/png",
+        "data": "iVBORw0KGgo..."
+      }
+    },
+    "cover": "imgs/cover.png",
+    "title": "文章标题",
+    "author": "宝玉",
+    "summary": "摘要"
+  }
+}
+```
+
+Supported structured fields for `operation: "api"`:
+
+| Field | CLI flag | Notes |
+|-------|----------|-------|
+| `markdown` | file argument | Written to `{job.dir}/input.md`; do not pre-render to HTML for markdown workflows |
+| `html` | file argument | Written to `{job.dir}/input.html`; inline styles should already be in the HTML |
+| `file` | file argument | Existing container path escape hatch when no `markdown` or `html` field is provided |
+| `theme` | `--theme` | Markdown rendering theme |
+| `color` | `--color` | Markdown rendering primary color |
+| `title` | `--title` | Overrides frontmatter or HTML title |
+| `author` | `--author` | Author name |
+| `summary` | `--summary` | Draft digest |
+| `sourceUrl` | `--source-url` | Original article URL shown as 阅读原文 |
+| `cover` | `--cover` | Relative paths resolve inside the job directory; absolute paths are passed through |
+| `account` | `--account` | Multi-account alias |
+| `noCite` | `--no-cite` | Keeps ordinary markdown links inline |
+| `dryRun` | `--dry-run` | Renders and validates without publishing |
+| `remote` | `--remote` | Routes WeChat API calls through SSH SOCKS5 |
+| `remoteHost` | `--remote-host` | Remote host for allowlisted IP publishing |
+| `remoteUser` | `--remote-user` | SSH user |
+| `remotePort` | `--remote-port` | SSH port |
+| `remoteIdentityFile` | `--remote-identity-file` | SSH private key path |
+| `remoteKnownHostsFile` | `--remote-known-hosts-file` | known_hosts path |
+| `remoteStrictHostKeyChecking` | `--remote-strict-host-key-checking` | `yes`, `no`, or `accept-new` |
+| `remoteConnectTimeout` | `--remote-connect-timeout` | SSH connect timeout in seconds |
+| `remoteProxyJump` | `--remote-proxy-jump` | SSH ProxyJump spec |
+
+`input.rawArgs` remains supported and takes precedence over all structured fields for advanced/manual invocations.
 
 ### Image Generation
 
