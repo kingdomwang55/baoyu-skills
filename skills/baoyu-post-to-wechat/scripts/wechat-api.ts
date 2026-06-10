@@ -431,25 +431,55 @@ function renderMarkdownWithPlaceholders(
   const mdToWechatScript = path.join(__dirname, "md-to-wechat.ts");
   const baseDir = path.dirname(markdownPath);
 
-  const args = ["-y", "bun", mdToWechatScript, markdownPath];
-  if (title) args.push("--title", title);
-  if (theme) args.push("--theme", theme);
-  if (color) args.push("--color", color);
-  if (!citeStatus) args.push("--no-cite");
+  const invocation = buildMarkdownRenderInvocation(mdToWechatScript, markdownPath, {
+    title,
+    theme,
+    color,
+    citeStatus,
+  });
 
   console.error(`[wechat-api] Rendering markdown with placeholders via md-to-wechat: ${theme}${color ? `, color: ${color}` : ""}, citeStatus: ${citeStatus}`);
-  const result = spawnSync("npx", args, {
+  const result = spawnSync(invocation.command, invocation.args, {
     stdio: ["inherit", "pipe", "pipe"],
     cwd: baseDir,
   });
 
-  if (result.status !== 0) {
-    const stderr = result.stderr?.toString() || "";
-    throw new Error(`Markdown placeholder render failed: ${stderr}`);
+  if (result.error || result.status !== 0) {
+    throw new Error(formatMarkdownRenderFailure(result));
   }
 
   const stdout = result.stdout?.toString() || "";
   return JSON.parse(stdout) as MarkdownRenderResult;
+}
+
+export function resolveBunExecutable(): string {
+  const versions = process.versions as NodeJS.ProcessVersions & { bun?: string };
+  return versions.bun ? process.execPath : "bun";
+}
+
+export function buildMarkdownRenderInvocation(
+  mdToWechatScript: string,
+  markdownPath: string,
+  options: { title?: string; theme?: string; color?: string; citeStatus?: boolean } = {},
+): { command: string; args: string[] } {
+  const args = [mdToWechatScript, markdownPath];
+  if (options.title) args.push("--title", options.title);
+  if (options.theme) args.push("--theme", options.theme);
+  if (options.color) args.push("--color", options.color);
+  if (options.citeStatus === false) args.push("--no-cite");
+  return { command: resolveBunExecutable(), args };
+}
+
+export function formatMarkdownRenderFailure(result: Pick<ReturnType<typeof spawnSync>, "error" | "status" | "signal" | "stderr" | "stdout">): string {
+  const parts = ["Markdown placeholder render failed"];
+  if (result.error) parts.push(`error=${result.error.message}`);
+  if (result.status !== null) parts.push(`status=${result.status}`);
+  if (result.signal) parts.push(`signal=${result.signal}`);
+  const stderr = result.stderr?.toString().trim();
+  const stdout = result.stdout?.toString().trim();
+  if (stderr) parts.push(`stderr=${stderr}`);
+  if (stdout) parts.push(`stdout=${stdout}`);
+  return parts.join(": ");
 }
 
 function replaceAllPlaceholders(html: string, placeholder: string, replacement: string): string {
@@ -881,7 +911,10 @@ async function main(): Promise<void> {
   }
 }
 
-await main().catch((err) => {
-  console.error(`Error: ${err instanceof Error ? err.message : String(err)}`);
-  process.exit(1);
-});
+const isMain = process.argv[1] ? path.resolve(process.argv[1]) === fileURLToPath(import.meta.url) : false;
+if (isMain) {
+  await main().catch((err) => {
+    console.error(`Error: ${err instanceof Error ? err.message : String(err)}`);
+    process.exit(1);
+  });
+}
