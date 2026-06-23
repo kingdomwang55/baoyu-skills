@@ -1,6 +1,7 @@
 {
   "name": "baoyu-codex-imagegen",
   "version": "0.1.0",
+  "license": "MIT",
   "type": "module",
   "description": "Generate images via Codex CLI's built-in image_gen tool from non-Codex runtimes (Claude Code, Hermes, …).",
   "bin": {

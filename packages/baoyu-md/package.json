@@ -1,6 +1,7 @@
 {
   "name": "baoyu-md",
   "version": "0.1.1",
+  "license": "MIT",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",

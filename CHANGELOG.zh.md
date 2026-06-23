@@ -2,6 +2,36 @@
 
 [English](./CHANGELOG.md) | 中文
 
+## 2.5.2 - 2026-06-18
+
+### 修复
+- `codex-imagegen`：阻止 Codex 通过复制 `generated_images` 中无关旧图片来代替真正生成的取巧行为。校验改为要求当前线程内 `image_gen` 真正运行的证据——事件流中的 `image_gen` 事件，**或**当前线程 `generated_images` 目录下新生成的 PNG——并在派生 agent 指令中禁止在调用 `image_gen` 之前读取或复用历史图片（[#185](https://github.com/JimLiu/baoyu-skills/issues/185)）
+
+### 文档
+- README：补充 Codex 项目级安装（`.agents/skills`）以及项目级与全局公众号凭证的放置位置
+
+## 2.5.1 - 2026-06-13
+
+### 文档
+- 图片生成类 skills：在共享后端选择规则中补充 Cursor 原生 `GenerateImage` 后端说明，包括通过提示词声明宽高比、处理工具托管输出文件，以及使用 `reference_image_paths` 传入参考图。
+
+## 2.5.0 - 2026-06-12
+
+### 新功能
+- `baoyu-wechat-summary`：新增群级事实记忆（`memory.md`）。群友指正过、确认过的客观事实（如某个报错提示的真实原因、某产品名的正确写法）跨期生效——上一期摘要说错、被群友指正的说法，后续不再重犯。写入保守：三条门槛全满足才记（针对具体事实 + 有理由或证据 + 无人反驳），严格防注入（只记陈述句事实、不记对 bot 的行为指令，`@bot` 不是白名单通道），每条带出处，并有修订/作废/去重规则和 30 条上限。事实记忆由正常版和毒舌版共用
+- `baoyu-image-gen`：新增 Agnes AI 图片生成 provider (by @Davidlaizz)
+- `baoyu-image-gen`：默认使用 GA Gemini 图片端点，并支持搭配参考图使用 (by @hypn4)
+- `baoyu-post-to-wechat`：支持 `content_source_url`，用于设置"阅读原文"链接 (by @NTLx)
+
+### 修复
+- `baoyu-image-gen`：移除 `resolveSize` 中的 gcd 计算，修复小数宽高比被扭曲的问题 (by @Davidlaizz)
+- `baoyu-fetch`：`parseYouTubeVideoId` 支持解析 YouTube `/embed/` 链接 (by @Osamaali313)
+- `baoyu-image-gen`：容忍 Windows 上 Bun 的 `mkdir(recursive)` 抛出 `EEXIST` 错误 (by @sandypoli-boop)
+
+### 文档
+- 优化各 skill 的 description，提高触发准确度 (by @yanghaod2278827)
+- README：添加图书/电子书链接，并在技能列表中突出 `baoyu-design`
+
 ## 2.4.1 - 2026-06-01
 
 ### 修复

@@ -33,17 +33,26 @@ test("parseEventStream tolerates malformed lines", () => {
   expect(r.usage?.input).toBe(1);
 });
 
-test("hasImageGenInvocation finds shell calls touching generated_images", () => {
+test("hasImageGenInvocation does not infer image_gen from shell copies", () => {
   const r = parseEventStream(REAL_PoC_STREAM);
-  // image_gen itself is not an event; inferred via generated_images cp path
-  // this test only verifies parser behavior; driver logic lives in validator
   const hasCp = r.toolCalls.some((tc) => tc.command?.includes("generated_images"));
   expect(hasCp).toBe(true);
+  expect(hasImageGenInvocation(r.toolCalls)).toBe(false);
 });
 
-test("hasImageGenInvocation (proper) returns false when no image_gen tool", () => {
+test("hasImageGenInvocation detects real image_gen tool calls only", () => {
   expect(hasImageGenInvocation([{ id: "1", tool: "shell", status: "completed" }])).toBe(false);
   expect(
     hasImageGenInvocation([{ id: "1", tool: "image_gen", status: "completed" }]),
   ).toBe(true);
+});
+
+test("parseEventStream normalizes an image_generation item to image_gen", () => {
+  const stream = `{"type":"thread.started","thread_id":"t1"}
+{"type":"item.started","item":{"id":"g0","type":"image_generation","status":"in_progress"}}
+{"type":"item.completed","item":{"id":"g0","type":"image_generation","status":"completed"}}
+{"type":"item.completed","item":{"id":"m0","type":"agent_message","text":"done"}}`;
+  const r = parseEventStream(stream);
+  expect(r.toolCalls.some((tc) => tc.tool === "image_gen")).toBe(true);
+  expect(hasImageGenInvocation(r.toolCalls)).toBe(true);
 });

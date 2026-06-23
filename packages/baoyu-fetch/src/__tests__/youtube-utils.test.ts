@@ -19,6 +19,10 @@ describe("parseYouTubeVideoId", () => {
   test("parses shorts URLs", () => {
     expect(parseYouTubeVideoId(new URL("https://www.youtube.com/shorts/abc123"))).toBe("abc123");
   });
+
+  test("parses embed URLs", () => {
+    expect(parseYouTubeVideoId(new URL("https://www.youtube.com/embed/abc123"))).toBe("abc123");
+  });
 });
 
 describe("parseYouTubeDescriptionChapters", () => {

@@ -1,6 +1,7 @@
 {
   "name": "baoyu-fetch",
   "version": "0.1.2",
+  "license": "MIT",
   "description": "Read URLs into high-quality Markdown or JSON with Chrome CDP and site adapters.",
   "type": "module",
   "bin": {
