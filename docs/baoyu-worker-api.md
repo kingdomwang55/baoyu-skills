@@ -2,6 +2,8 @@
 
 `baoyu-worker` wraps the `baoyu-skills` repository as an HTTP service for tools such as n8n. The worker exposes every marketplace skill through a fixed skill registry. CLI-backed skills run through Bun with array-form arguments. Instruction-driven skills return a packaged skill contract that an upstream agent workflow can execute with the configured text or image backend.
 
+This worker layer is maintained for the private `kingdomwang55/baoyu-skills.git` fork and is not part of the upstream `JimLiu/baoyu-skills` marketplace release. It is expected to move into an independent project later; until then, these docs describe the private worker branch behavior.
+
 For host deployment steps, see [baoyu-worker 宿主机部署指南](baoyu-worker-deployment.md).
 
 ## Run With Docker

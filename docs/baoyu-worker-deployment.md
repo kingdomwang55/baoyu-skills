@@ -2,6 +2,8 @@
 
 本文档用于把远程 `worker-main` 分支中的 `baoyu-worker` 直接部署到 n8n 所在宿主机。
 
+`baoyu-worker` 当前维护在私有 fork `kingdomwang55/baoyu-skills.git` 中，不对应上游 `JimLiu/baoyu-skills` 的 marketplace 发布内容。后续如果 worker 独立成新项目，本文档中的仓库地址和分支名也需要同步迁移。
+
 ## 前提
 
 - 宿主机已安装 Docker 和 Docker Compose。
