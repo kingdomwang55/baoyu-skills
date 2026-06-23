@@ -38,7 +38,7 @@ For Chrome/CDP skills, keep `/data/chrome-profile` mounted so browser login stat
 
 The `.env` example is grouped by purpose:
 
-- Worker runtime: `BAOYU_WORKER_TOKEN`, `BAOYU_WORKER_DATA_DIR`, `BAOYU_CHROME_PROFILE_DIR`, `PORT`, `HOST`.
+- Worker runtime: `BAOYU_WORKER_TOKEN`, `BAOYU_WORKER_DATA_DIR`, `BAOYU_CHROME_PROFILE_DIR`, `PORT`, `HOST`; the host shared-content directory is set with `BAOYU_WORKER_SHARED_DIR` and mounted at `/data/wechat_articles`.
 - OpenAI-compatible endpoints and gateways: `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `OPENAI_IMAGE_MODEL`, `OPENAI_IMAGE_API_DIALECT`, `OPENAI_IMAGE_USE_CHAT`.
 - Google/Gemini API provider: `GOOGLE_API_KEY`, `GEMINI_API_KEY`, `GOOGLE_BASE_URL`, `GOOGLE_IMAGE_MODEL`.
 - OpenRouter gateways: `OPENROUTER_API_KEY`, `OPENROUTER_BASE_URL`, `OPENROUTER_HTTP_REFERER`, `OPENROUTER_TITLE`, `OPENROUTER_IMAGE_MODEL`.
@@ -61,6 +61,7 @@ Important: pass-through only makes variables available inside the container. A v
 | Skill area | Variables read by current code |
 |------------|--------------------------------|
 | Worker server | `BAOYU_WORKER_TOKEN`, `BAOYU_WORKER_DATA_DIR`, `BAOYU_CHROME_PROFILE_DIR`, `PORT`, `HOST` |
+| Compose shared mount | `BAOYU_WORKER_SHARED_DIR` selects the host directory mounted at `/data/wechat_articles` |
 | `baoyu-image-gen` | `OPENAI_*`, `GOOGLE_*`, `GEMINI_API_KEY`, `OPENROUTER_*`, `DASHSCOPE_*`, `ARK_API_KEY`, `SEEDREAM_*`, `ZAI_*`, `BIGMODEL_*`, `MINIMAX_*`, `JIMENG_*`, `AZURE_OPENAI_*`, `REPLICATE_*`, `AGNES_*`, `BAOYU_IMAGE_GEN_AGNES_*`, `BAOYU_CODEX_IMAGEGEN_*`, `BAOYU_IMAGE_GEN_MAX_WORKERS`, proxy variables |
 | `baoyu-danger-gemini-web` | `GEMINI_WEB_*`, `BAOYU_CHROME_PROFILE_DIR` |
 | `baoyu-danger-x-to-markdown` | `X_AUTH_TOKEN`, `X_CT0`, `X_GUEST_TOKEN`, `X_TWID`, `X_BEARER_TOKEN`, `X_USER_AGENT`, `X_CLIENT_TRANSACTION_ID`, `X_DATA_DIR`, `X_COOKIE_PATH`, `X_CHROME_PROFILE_DIR`, `BAOYU_CHROME_PROFILE_DIR` |

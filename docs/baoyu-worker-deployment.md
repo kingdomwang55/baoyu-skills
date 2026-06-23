@@ -63,6 +63,8 @@ nano .env
 BAOYU_WORKER_TOKEN=换成一个很长的随机字符串
 ```
 
+`BAOYU_WORKER_SHARED_DIR` 默认是 `${HOME}/docker-shared/wechat_articles`，并会挂载到容器内的 `/data/wechat_articles`。将 Markdown、图片或其他需要与 worker 共享的文件放入该宿主机目录；如需使用其他位置，可在 `.env` 中覆盖，并确保 Docker 有读取权限。
+
 如果使用火山 Coding Plan / DeepSeek OpenAI-compatible，在 `.env` 中填写：
 
 ```bash

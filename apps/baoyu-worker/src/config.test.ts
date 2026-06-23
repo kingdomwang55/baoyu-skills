@@ -134,6 +134,15 @@ describe("baoyu-worker deployment config", () => {
   });
 
   it("documents every pass-through variable in the env example", () => {
-    assert.deepEqual(envExampleNames(), flattenGroups());
+    assert.deepEqual(envExampleNames(), [...flattenGroups(), "BAOYU_WORKER_SHARED_DIR"].sort());
+  });
+
+  it("mounts the host shared article directory into the worker", () => {
+    const compose = readFileSync(composePath, "utf8");
+
+    assert.match(
+      compose,
+      /- \$\{BAOYU_WORKER_SHARED_DIR:-\$\{HOME\}\/docker-shared\/wechat_articles\}:\/data\/wechat_articles/,
+    );
   });
 });

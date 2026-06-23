@@ -127,6 +127,7 @@ services:
       ALL_PROXY: "${ALL_PROXY:-}"
     volumes:
       - baoyu-worker-data:/data
+      - ${BAOYU_WORKER_SHARED_DIR:-${HOME}/docker-shared/wechat_articles}:/data/wechat_articles
     restart: unless-stopped
 
 volumes:
