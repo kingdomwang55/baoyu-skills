@@ -58,6 +58,28 @@ describe("baoyu-worker registry", () => {
     ]);
   });
 
+  it("forwards the image generation response format", () => {
+    const invocation = buildInvocation({
+      skill: "baoyu-image-gen",
+      workDir: "/tmp/job",
+      input: {
+        prompt: "A mountain lake",
+        responseFormat: "url",
+      },
+    });
+
+    assert.equal(invocation.kind, "cli");
+    assert.deepEqual(invocation.args, [
+      "skills/baoyu-image-gen/scripts/main.ts",
+      "--prompt",
+      "A mountain lake",
+      "--image",
+      "/tmp/job/output/image.png",
+      "--response-format",
+      "url",
+    ]);
+  });
+
   it("exposes instruction-only skills as prompt packages instead of shell commands", () => {
     const invocation = buildInvocation({
       skill: "baoyu-cover-image",

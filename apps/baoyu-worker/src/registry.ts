@@ -103,6 +103,7 @@ function imageGenArgs(input: Input, workDir: string): string[] {
   pushFlag(args, "--ar", stringValue(input, "ar"));
   pushFlag(args, "--size", stringValue(input, "size"));
   pushFlag(args, "--quality", stringValue(input, "quality"));
+  pushFlag(args, "--response-format", stringValue(input, "responseFormat"));
   if (booleanValue(input, "json")) args.push("--json");
   return args;
 }

@@ -65,6 +65,13 @@ const requiredEnvGroups: Record<string, string[]> = {
     "REPLICATE_BASE_URL",
     "REPLICATE_IMAGE_MODEL",
   ],
+  agnes: [
+    "AGNES_API_KEY",
+    "AGNES_BASE_URL",
+    "AGNES_IMAGE_MODEL",
+    "BAOYU_IMAGE_GEN_AGNES_CONCURRENCY",
+    "BAOYU_IMAGE_GEN_AGNES_START_INTERVAL_MS",
+  ],
   browserAndPlatformSkills: [
     "GEMINI_WEB_DATA_DIR",
     "GEMINI_WEB_COOKIE_PATH",
